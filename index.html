@@ -15,7 +15,7 @@
             color: #333;
             display: flex;
             justify-content: center;
-            align-items: center;
+            align-items: flex-start; /* Changed for longer content */
             min-height: 100vh;
             margin: 0;
             padding: 20px;
@@ -48,7 +48,7 @@
             color: #4b5563;
         }
 
-        input[type="number"], input[type="date"] {
+        input[type="number"], input[type="date"], input[type="text"] { /* Changed */
             width: 100%;
             padding: 12px;
             border: 1px solid #d1d5db;
@@ -56,6 +56,11 @@
             box-sizing: border-box;
             font-size: 1rem;
             font-family: 'Sarabun', sans-serif;
+        }
+
+        /* Style for number-formatted inputs */
+        .format-number {
+            text-align: right;
         }
 
         .button-group {
@@ -138,12 +143,14 @@
         <form id="retirement-form">
             <div class="form-group">
                 <label for="initialInvestment">เงินลงทุนตั้งต้น (บาท)</label>
-                <input type="number" id="initialInvestment" placeholder="เช่น 50000" required>
+                <!-- Changed: type="text", added class, inputmode, and pattern -->
+                <input type="text" id="initialInvestment" class="format-number" inputmode="numeric" pattern="[0-9,]*" placeholder="เช่น 50,000" required>
             </div>
 
             <div class="form-group">
                 <label for="monthlyInvestment">เงินลงทุนต่อเดือน (บาท)</label>
-                <input type="number" id="monthlyInvestment" placeholder="เช่น 5000" required>
+                <!-- Changed: type="text", added class, inputmode, and pattern -->
+                <input type="text" id="monthlyInvestment" class="format-number" inputmode="numeric" pattern="[0-9,]*" placeholder="เช่น 5,000" required>
             </div>
 
             <div class="form-group">
@@ -208,27 +215,63 @@
 
     const STORAGE_KEY = 'retirementCalculatorData';
 
+    // --- Helper Functions for Number Formatting --- // Changed: Added new section
+    function formatNumber(value) {
+        // ลบ comma ที่มีอยู่ออกไปก่อน แล้ว format ใหม่
+        const number = parseFloat(value.replace(/,/g, ''));
+        if (isNaN(number)) {
+            return '';
+        }
+        return number.toLocaleString('en-US');
+    }
+    
+    function unformatNumber(value) {
+        return value.replace(/,/g, '');
+    }
+
+    function onInputNumberFormat(event) {
+        const input = event.target;
+        let value = input.value;
+        let originalCursorPos = input.selectionStart;
+
+        // ลบทุกอย่างที่ไม่ใช่ตัวเลข
+        let numericValue = value.replace(/[^\d]/g, '');
+
+        if (numericValue) {
+            let formattedValue = Number(numericValue).toLocaleString('en-US');
+            
+            // แก้ปัญหา cursor กระโดด
+            let commaDiff = (formattedValue.match(/,/g) || []).length - (value.match(/,/g) || []).length;
+            let newCursorPos = originalCursorPos + commaDiff;
+
+            input.value = formattedValue;
+            input.setSelectionRange(newCursorPos, newCursorPos);
+        } else {
+            input.value = '';
+        }
+    }
+
+
     // 2. Function สำหรับการคำนวณหลัก
     function calculateRetirement(event) {
-        event.preventDefault(); // ป้องกันไม่ให้หน้าเว็บโหลดใหม่เมื่อกดปุ่ม submit
-        errorMessage.textContent = ''; // เคลียร์ข้อความ error เก่า
+        event.preventDefault(); 
+        errorMessage.textContent = '';
 
-        // ดึงค่าจาก input และแปลงเป็นตัวเลข
-        const initial = parseFloat(initialInvestmentEl.value) || 0;
-        const monthly = parseFloat(monthlyInvestmentEl.value) || 0;
+        // Changed: Use unformatNumber to remove commas before parsing
+        const initial = parseFloat(unformatNumber(initialInvestmentEl.value)) || 0;
+        const monthly = parseFloat(unformatNumber(monthlyInvestmentEl.value)) || 0;
         const annualReturn = parseFloat(annualReturnEl.value) || 0;
         const birthDate = new Date(birthDateEl.value);
         const retirementAge = parseInt(retirementAgeEl.value);
         const lifeExpectancy = parseInt(lifeExpectancyEl.value);
 
-        // ตรวจสอบข้อมูลเบื้องต้น
+        // ... (ส่วนการคำนวณที่เหลือเหมือนเดิมทั้งหมด) ...
         if (!birthDateEl.value || retirementAge <= 0 || lifeExpectancy <= retirementAge) {
             errorMessage.textContent = 'กรุณากรอกข้อมูลให้ถูกต้อง (อายุเกษียณต้องน้อยกว่าอายุคาดว่าจะเสียชีวิต)';
             resultsDiv.classList.add('hidden');
             return;
         }
 
-        // คำนวณอายุและระยะเวลา
         const today = new Date();
         let currentAge = today.getFullYear() - birthDate.getFullYear();
         const m = today.getMonth() - birthDate.getMonth();
@@ -237,35 +280,27 @@
         }
 
         if (retirementAge <= currentAge) {
-            errorMessage.textContent = 'อายุที่ต้องการเกษียณต้องมากกว่าอายุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุ-ปัจจุบัน';
+            errorMessage.textContent = 'อายุที่ต้องการเกษียณต้องมากกว่าอายุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุ-ปัจจุบัน';
             return;
         }
-
+        
         const yearsToInvest = retirementAge - currentAge;
         const yearsInRetirement = lifeExpectancy - retirementAge;
         const monthlyReturn = annualReturn / 100 / 12;
         const totalMonthsToInvest = yearsToInvest * 12;
         const totalMonthsInRetirement = yearsInRetirement * 12;
 
-        // คำนวณเงินก้อน ณ วันเกษียณ (Future Value)
-        // FV = PV*(1+r)^n + PMT*[((1+r)^n - 1)/r]
-        // PV = เงินต้น (initial), PMT = เงินลงทุนต่อเดือน (monthly), r = ผลตอบแทนต่อเดือน, n = จำนวนเดือนที่ลงทุน
         const fvInitial = initial * Math.pow(1 + monthlyReturn, totalMonthsToInvest);
         const fvMonthly = monthly * ((Math.pow(1 + monthlyReturn, totalMonthsToInvest) - 1) / monthlyReturn);
         const totalNestEgg = fvInitial + fvMonthly;
 
-        // คำนวณเงินที่ถอนใช้ได้ต่อเดือนหลังเกษียณ (PMT formula)
-        // PMT = PV * [r(1+r)^n] / [(1+r)^n - 1]
-        // PV = เงินก้อนเกษียณ (totalNestEgg), r = ผลตอบแทนต่อเดือน, n = จำนวนเดือนหลังเกษียณ
         let monthlyWithdrawal = 0;
-        if (monthlyReturn > 0) {
+        if (monthlyReturn > 0 && isFinite(totalNestEgg)) {
             monthlyWithdrawal = totalNestEgg * (monthlyReturn * Math.pow(1 + monthlyReturn, totalMonthsInRetirement)) / (Math.pow(1 + monthlyReturn, totalMonthsInRetirement) - 1);
-        } else {
-            // กรณีผลตอบแทนเป็น 0 หรือติดลบ (ไม่มีดอกเบี้ยทบต้น)
+        } else if(isFinite(totalNestEgg)) {
             monthlyWithdrawal = totalNestEgg / totalMonthsInRetirement;
         }
 
-        // แสดงผล
         displayResults({
             yearsToInvest,
             retirementAge,
@@ -275,11 +310,10 @@
             monthlyWithdrawal
         });
 
-        // บันทึกข้อมูลลง Local Storage
         saveDataToLocalStorage();
     }
 
-    // 3. Function สำหรับการแสดงผล
+    // 3. Function สำหรับการแสดงผล (ไม่มีการเปลี่ยนแปลง)
     function displayResults(data) {
         const formatter = new Intl.NumberFormat('th-TH', {
             style: 'currency',
@@ -300,8 +334,9 @@
     // 4. Functions สำหรับ Local Storage
     function saveDataToLocalStorage() {
         const data = {
-            initialInvestment: initialInvestmentEl.value,
-            monthlyInvestment: monthlyInvestmentEl.value,
+            // Changed: Save the unformatted value
+            initialInvestment: unformatNumber(initialInvestmentEl.value),
+            monthlyInvestment: unformatNumber(monthlyInvestmentEl.value),
             annualReturn: annualReturnEl.value,
             birthDate: birthDateEl.value,
             retirementAge: retirementAgeEl.value,
@@ -314,8 +349,9 @@
         const savedData = localStorage.getItem(STORAGE_KEY);
         if (savedData) {
             const data = JSON.parse(savedData);
-            initialInvestmentEl.value = data.initialInvestment;
-            monthlyInvestmentEl.value = data.monthlyInvestment;
+            // Changed: Load and then format the value
+            initialInvestmentEl.value = data.initialInvestment ? formatNumber(data.initialInvestment) : '';
+            monthlyInvestmentEl.value = data.monthlyInvestment ? formatNumber(data.monthlyInvestment) : '';
             annualReturnEl.value = data.annualReturn;
             birthDateEl.value = data.birthDate;
             retirementAgeEl.value = data.retirementAge;
@@ -324,16 +360,20 @@
     }
 
     function resetAllData() {
-        form.reset(); // ล้างค่าในฟอร์มทั้งหมด
-        localStorage.removeItem(STORAGE_KEY); // ลบข้อมูลจาก Local Storage
-        resultsDiv.classList.add('hidden'); // ซ่อนผลลัพธ์
-        errorMessage.textContent = ''; // เคลียร์ข้อความ error
+        form.reset(); 
+        localStorage.removeItem(STORAGE_KEY); 
+        resultsDiv.classList.add('hidden');
+        errorMessage.textContent = '';
     }
 
     // 5. เชื่อม Event Listeners เข้ากับ Functions
     form.addEventListener('submit', calculateRetirement);
     resetButton.addEventListener('click', resetAllData);
-    document.addEventListener('DOMContentLoaded', loadDataFromLocalStorage); // โหลดข้อมูลเมื่อหน้าเว็บพร้อมใช้งาน
+    document.addEventListener('DOMContentLoaded', loadDataFromLocalStorage);
+    
+    // Changed: Add event listeners for number formatting
+    initialInvestmentEl.addEventListener('input', onInputNumberFormat);
+    monthlyInvestmentEl.addEventListener('input', onInputNumberFormat);
 
     </script>
 
