@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เครื่องคำนวณเงินลงทุนเพื่อการเกษียณ</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* --- CSS Styling --- */
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #1e3a8a;
+            margin-bottom: 25px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #4b5563;
+        }
+
+        input[type="number"], input[type="date"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 1rem;
+            font-family: 'Sarabun', sans-serif;
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        button {
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            font-family: 'Sarabun', sans-serif;
+        }
+
+        button[type="submit"] {
+            background-color: #1e40af;
+            color: white;
+        }
+
+        button[type="submit"]:hover {
+            background-color: #1e3a8a;
+        }
+        
+        #resetButton {
+            background-color: #dbeafe;
+            color: #1e40af;
+        }
+        
+        #resetButton:hover {
+            background-color: #bfdbfe;
+        }
+
+        .results {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #eef2ff;
+            border: 2px solid #c7d2fe;
+            border-radius: 8px;
+        }
+        
+        .results.hidden {
+            display: none;
+        }
+
+        .results h2 {
+            margin-top: 0;
+            color: #1e3a8a;
+            text-align: center;
+        }
+
+        .results p {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin: 10px 0;
+        }
+
+        .results span {
+            font-weight: bold;
+            color: #1d4ed8;
+        }
+        
+        .error {
+            color: #ef4444;
+            text-align: center;
+            margin-top: 15px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>คำนวณเงินเกษียณ</h1>
+        <form id="retirement-form">
+            <div class="form-group">
+                <label for="initialInvestment">เงินลงทุนตั้งต้น (บาท)</label>
+                <input type="number" id="initialInvestment" placeholder="เช่น 50000" required>
+            </div>
+
+            <div class="form-group">
+                <label for="monthlyInvestment">เงินลงทุนต่อเดือน (บาท)</label>
+                <input type="number" id="monthlyInvestment" placeholder="เช่น 5000" required>
+            </div>
+
+            <div class="form-group">
+                <label for="annualReturn">ผลตอบแทนที่คาดหวังต่อปี (%)</label>
+                <input type="number" id="annualReturn" placeholder="เช่น 8" step="0.1" required>
+            </div>
+
+            <div class="form-group">
+                <label for="birthDate">วัน/เดือน/ปีเกิด</label>
+                <input type="date" id="birthDate" required>
+            </div>
+
+            <div class="form-group">
+                <label for="retirementAge">อายุที่ต้องการเกษียณ (ปี)</label>
+                <input type="number" id="retirementAge" placeholder="เช่น 60" required>
+            </div>
+
+            <div class="form-group">
+                <label for="lifeExpectancy">อายุที่คาดว่าจะเสียชีวิต (ปี)</label>
+                <input type="number" id="lifeExpectancy" placeholder="เช่น 85" required>
+            </div>
+
+            <div class="button-group">
+                <button type="button" id="resetButton">ล้างข้อมูล</button>
+                <button type="submit">คำนวณ</button>
+            </div>
+            
+            <p id="error-message" class="error"></p>
+        </form>
+
+        <div id="results" class="results hidden">
+            <h2>สรุปผลการคำนวณ</h2>
+            <p>คุณจะลงทุนเป็นเวลา <span id="yearsToInvest"></span> ปี</p>
+            <p>เงินที่จะมี ณ วันเกษียณอายุ <span id="ageAtRetirement"></span> ปี: <span id="retirementTotal"></span></p>
+            <hr>
+            <p>คุณจะมีเงินใช้หลังเกษียณไปอีก <span id="yearsInRetirement"></span> ปี</p>
+            <p>เงินที่ใช้ได้ต่อเดือนจนถึงอายุ <span id="ageAtEnd"></span> ปี: <span id="monthlyWithdrawal"></span></p>
+        </div>
+    </div>
+
+    <script>
+    // --- JavaScript Logic ---
+
+    // 1. เลือก Element ที่จะใช้งานจาก HTML
+    const form = document.getElementById('retirement-form');
+    const initialInvestmentEl = document.getElementById('initialInvestment');
+    const monthlyInvestmentEl = document.getElementById('monthlyInvestment');
+    const annualReturnEl = document.getElementById('annualReturn');
+    const birthDateEl = document.getElementById('birthDate');
+    const retirementAgeEl = document.getElementById('retirementAge');
+    const lifeExpectancyEl = document.getElementById('lifeExpectancy');
+    const resetButton = document.getElementById('resetButton');
+    
+    const resultsDiv = document.getElementById('results');
+    const yearsToInvestSpan = document.getElementById('yearsToInvest');
+    const ageAtRetirementSpan = document.getElementById('ageAtRetirement');
+    const retirementTotalSpan = document.getElementById('retirementTotal');
+    const yearsInRetirementSpan = document.getElementById('yearsInRetirement');
+    const ageAtEndSpan = document.getElementById('ageAtEnd');
+    const monthlyWithdrawalSpan = document.getElementById('monthlyWithdrawal');
+    const errorMessage = document.getElementById('error-message');
+
+    const STORAGE_KEY = 'retirementCalculatorData';
+
+    // 2. Function สำหรับการคำนวณหลัก
+    function calculateRetirement(event) {
+        event.preventDefault(); // ป้องกันไม่ให้หน้าเว็บโหลดใหม่เมื่อกดปุ่ม submit
+        errorMessage.textContent = ''; // เคลียร์ข้อความ error เก่า
+
+        // ดึงค่าจาก input และแปลงเป็นตัวเลข
+        const initial = parseFloat(initialInvestmentEl.value) || 0;
+        const monthly = parseFloat(monthlyInvestmentEl.value) || 0;
+        const annualReturn = parseFloat(annualReturnEl.value) || 0;
+        const birthDate = new Date(birthDateEl.value);
+        const retirementAge = parseInt(retirementAgeEl.value);
+        const lifeExpectancy = parseInt(lifeExpectancyEl.value);
+
+        // ตรวจสอบข้อมูลเบื้องต้น
+        if (!birthDateEl.value || retirementAge <= 0 || lifeExpectancy <= retirementAge) {
+            errorMessage.textContent = 'กรุณากรอกข้อมูลให้ถูกต้อง (อายุเกษียณต้องน้อยกว่าอายุคาดว่าจะเสียชีวิต)';
+            resultsDiv.classList.add('hidden');
+            return;
+        }
+
+        // คำนวณอายุและระยะเวลา
+        const today = new Date();
+        let currentAge = today.getFullYear() - birthDate.getFullYear();
+        const m = today.getMonth() - birthDate.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+            currentAge--;
+        }
+
+        if (retirementAge <= currentAge) {
+            errorMessage.textContent = 'อายุที่ต้องการเกษียณต้องมากกว่าอายุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุุ-ปัจจุบัน';
+            return;
+        }
+
+        const yearsToInvest = retirementAge - currentAge;
+        const yearsInRetirement = lifeExpectancy - retirementAge;
+        const monthlyReturn = annualReturn / 100 / 12;
+        const totalMonthsToInvest = yearsToInvest * 12;
+        const totalMonthsInRetirement = yearsInRetirement * 12;
+
+        // คำนวณเงินก้อน ณ วันเกษียณ (Future Value)
+        // FV = PV*(1+r)^n + PMT*[((1+r)^n - 1)/r]
+        // PV = เงินต้น (initial), PMT = เงินลงทุนต่อเดือน (monthly), r = ผลตอบแทนต่อเดือน, n = จำนวนเดือนที่ลงทุน
+        const fvInitial = initial * Math.pow(1 + monthlyReturn, totalMonthsToInvest);
+        const fvMonthly = monthly * ((Math.pow(1 + monthlyReturn, totalMonthsToInvest) - 1) / monthlyReturn);
+        const totalNestEgg = fvInitial + fvMonthly;
+
+        // คำนวณเงินที่ถอนใช้ได้ต่อเดือนหลังเกษียณ (PMT formula)
+        // PMT = PV * [r(1+r)^n] / [(1+r)^n - 1]
+        // PV = เงินก้อนเกษียณ (totalNestEgg), r = ผลตอบแทนต่อเดือน, n = จำนวนเดือนหลังเกษียณ
+        let monthlyWithdrawal = 0;
+        if (monthlyReturn > 0) {
+            monthlyWithdrawal = totalNestEgg * (monthlyReturn * Math.pow(1 + monthlyReturn, totalMonthsInRetirement)) / (Math.pow(1 + monthlyReturn, totalMonthsInRetirement) - 1);
+        } else {
+            // กรณีผลตอบแทนเป็น 0 หรือติดลบ (ไม่มีดอกเบี้ยทบต้น)
+            monthlyWithdrawal = totalNestEgg / totalMonthsInRetirement;
+        }
+
+        // แสดงผล
+        displayResults({
+            yearsToInvest,
+            retirementAge,
+            totalNestEgg,
+            yearsInRetirement,
+            lifeExpectancy,
+            monthlyWithdrawal
+        });
+
+        // บันทึกข้อมูลลง Local Storage
+        saveDataToLocalStorage();
+    }
+
+    // 3. Function สำหรับการแสดงผล
+    function displayResults(data) {
+        const formatter = new Intl.NumberFormat('th-TH', {
+            style: 'currency',
+            currency: 'THB',
+            minimumFractionDigits: 2
+        });
+
+        yearsToInvestSpan.textContent = data.yearsToInvest.toFixed(0);
+        ageAtRetirementSpan.textContent = data.retirementAge;
+        retirementTotalSpan.textContent = formatter.format(data.totalNestEgg);
+        yearsInRetirementSpan.textContent = data.yearsInRetirement.toFixed(0);
+        ageAtEndSpan.textContent = data.lifeExpectancy;
+        monthlyWithdrawalSpan.textContent = formatter.format(data.monthlyWithdrawal);
+
+        resultsDiv.classList.remove('hidden');
+    }
+
+    // 4. Functions สำหรับ Local Storage
+    function saveDataToLocalStorage() {
+        const data = {
+            initialInvestment: initialInvestmentEl.value,
+            monthlyInvestment: monthlyInvestmentEl.value,
+            annualReturn: annualReturnEl.value,
+            birthDate: birthDateEl.value,
+            retirementAge: retirementAgeEl.value,
+            lifeExpectancy: lifeExpectancyEl.value
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+
+    function loadDataFromLocalStorage() {
+        const savedData = localStorage.getItem(STORAGE_KEY);
+        if (savedData) {
+            const data = JSON.parse(savedData);
+            initialInvestmentEl.value = data.initialInvestment;
+            monthlyInvestmentEl.value = data.monthlyInvestment;
+            annualReturnEl.value = data.annualReturn;
+            birthDateEl.value = data.birthDate;
+            retirementAgeEl.value = data.retirementAge;
+            lifeExpectancyEl.value = data.lifeExpectancy;
+        }
+    }
+
+    function resetAllData() {
+        form.reset(); // ล้างค่าในฟอร์มทั้งหมด
+        localStorage.removeItem(STORAGE_KEY); // ลบข้อมูลจาก Local Storage
+        resultsDiv.classList.add('hidden'); // ซ่อนผลลัพธ์
+        errorMessage.textContent = ''; // เคลียร์ข้อความ error
+    }
+
+    // 5. เชื่อม Event Listeners เข้ากับ Functions
+    form.addEventListener('submit', calculateRetirement);
+    resetButton.addEventListener('click', resetAllData);
+    document.addEventListener('DOMContentLoaded', loadDataFromLocalStorage); // โหลดข้อมูลเมื่อหน้าเว็บพร้อมใช้งาน
+
+    </script>
+
+</body>
+</html>
