@@ -131,8 +131,17 @@
         }
         .view-toggle-btn.active { background-color: var(--primary-color); color: white; font-weight: 600; }
         
+        .table-container {
+            display: inline-block;
+            max-width: 100%;
+            overflow-x: auto;
+        }
+        .section.table-section { /* New style to center the table container */
+            display: flex;
+            justify-content: center;
+        }
+
         table { font-size: 0.9rem; width: 100%; border-collapse: collapse; }
-        #summary-view table, #analysis-view table { margin: 0 auto; } /* Center tables */
         th, td { white-space: nowrap; padding: 12px 10px; text-align: right;}
         th:first-child, td:first-child { text-align: left;}
         th { text-align: center; }
@@ -188,15 +197,16 @@
             header h1 { font-size: 2rem; }
             
             .dashboard {
-                gap: 10px;
+                gap: 8px;
             }
-            .card { padding: 15px; }
+            .card { padding: 10px; }
             .card h3 {
-                font-size: 0.9rem;
-                margin-bottom: 8px;
+                font-size: 0.8rem;
+                margin-bottom: 6px;
+                word-break: keep-all;
             }
-            .card .amount { font-size: 1.4rem; }
-            .card .sub-amount { font-size: 0.85rem; }
+            .card .amount { font-size: 1.1rem; }
+            .card .sub-amount { font-size: 0.75rem; }
 
             /* Table to Card Transformation */
             table thead { display: none; }
@@ -274,18 +284,18 @@
             </div>
 
             <div id="summary-view">
-                 <div class="section">
+                 <div class="section table-section">
                     <h2 class="section-title">สรุปตามประเภทสินทรัพย์</h2>
-                    <div style="overflow-x:auto;">
+                    <div class="table-container">
                         <table id="summary-table"></table>
                     </div>
                 </div>
             </div>
 
             <div id="analysis-view" class="hidden">
-                <div class="section">
+                <div class="section table-section">
                     <h2 class="section-title">สรุปผลการดำเนินงานรายปี</h2>
-                    <div style="overflow-x:auto;">
+                    <div class="table-container">
                         <table id="yearly-summary-table"></table>
                     </div>
                 </div>
