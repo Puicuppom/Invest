@@ -132,12 +132,16 @@
         .view-toggle-btn.active { background-color: var(--primary-color); color: white; font-weight: 600; }
         
         table { font-size: 0.9rem; width: 100%; border-collapse: collapse; }
-        th, td { white-space: nowrap; padding: 12px 10px; }
+        th, td { white-space: nowrap; padding: 12px 10px; text-align: right;}
+        th:first-child, td:first-child { text-align: left;}
+        th { text-align: center; }
+        th:first-child { text-align: left; }
+
         .btn-small { padding: 6px 12px; font-size: 0.8rem; width: auto; display: inline-block; }
         .btn-small-danger { padding: 4px 8px; font-size: 0.8rem; width: auto; display: inline-block; background-color: var(--danger-color); color: white;}
         .btn-small-danger:hover { background-color: var(--danger-hover-color); }
         
-        /* New Summary Accordion Styles */
+        /* Summary Accordion Styles */
         #summary-table .summary-row { cursor: pointer; transition: background-color 0.2s ease; }
         #summary-table .summary-row:hover { background-color: #f5f8fa; }
         #summary-table .details-row td { padding: 0; }
@@ -155,7 +159,7 @@
         .modal-content .button-group { display: flex; gap: 15px; margin-top: 25px; }
         .modal-content .button-group button { flex: 1; }
         
-        /* --- Retirement Calculator Specific Styles --- */
+        /* Retirement Calculator Specific Styles */
         #retirement-view .section { font-family: 'Sarabun', sans-serif; }
         #retirement-view h1 { text-align: center; color: var(--primary-color); margin-bottom: 25px; }
         #retirement-view label { display: block; margin-bottom: 8px; font-weight: bold; color: #4b5563; }
@@ -174,6 +178,76 @@
         #retirement-view .results p { font-size: 1.1rem; line-height: 1.6; margin: 10px 0; }
         #retirement-view .results span { font-weight: bold; color: #1d4ed8; }
         #retirement-view .error { color: var(--danger-color); text-align: center; margin-top: 15px; min-height: 1.2em; }
+        
+        /* --- MOBILE RESPONSIVE STYLES --- */
+        @media (max-width: 768px) {
+            body { padding: 1rem 0; }
+            .container { padding: 8px; }
+            .section { padding: 15px; }
+            header h1 { font-size: 2rem; }
+            .card .amount { font-size: 1.5rem; }
+
+            .view-toggle {
+                grid-template-columns: 1fr;
+                gap: 2px;
+                border: none;
+                border-radius: 8px;
+            }
+            .view-toggle-btn { border-radius: 8px !important; }
+
+            /* Table to Card Transformation */
+            table thead {
+                display: none;
+            }
+            table tr {
+                display: block;
+                margin-bottom: 1rem;
+                border-radius: 8px;
+                border: 1px solid var(--border-color);
+                box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+                overflow: hidden;
+            }
+            table td {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 10px 15px;
+                text-align: right !important;
+                border-bottom: 1px solid #f0f0f0;
+                white-space: normal;
+            }
+             table td:last-child {
+                border-bottom: none;
+            }
+            table td::before {
+                content: attr(data-label);
+                font-weight: 500;
+                color: #333;
+                text-align: left;
+                margin-right: 15px;
+            }
+            
+            #summary-table tr.summary-row { background-color: #f8f9fa; }
+            #summary-table td:first-child { 
+                background-color: var(--primary-color); 
+                color: white; 
+                font-weight: bold;
+                font-size: 1.1rem;
+                padding-top: 12px;
+                padding-bottom: 12px;
+            }
+             #summary-table td:first-child::before { display: none; } /* Hide label for the main title */
+            #summary-table td:last-child, #yearly-summary-table td:last-child {
+                justify-content: center;
+            }
+             #summary-table .details-row {
+                margin-top: -1rem; /* Pull details closer to parent */
+                margin-bottom: 1rem;
+                border-top: none;
+                border-top-left-radius: 0;
+                border-top-right-radius: 0;
+            }
+        }
     </style>
 </head>
 <body>
@@ -290,7 +364,6 @@
                 </form>
             </div>
              
-             <!-- Action buttons removed from here -->
         </div>
     </div>
     
@@ -322,10 +395,9 @@
 
     // --- GLOBAL VARIABLES ---
     let allInvestments = [];
-    let currentView = 'summary'; // Default view is now summary
+    let currentView = 'summary';
 
     // --- DOM ELEMENT SELECTORS ---
-    // Main App
     const authContainer = document.getElementById('auth-container');
     const appContainer = document.getElementById('app-container');
     const userEmailDisplay = document.getElementById('user-email-display');
@@ -335,8 +407,6 @@
     const addInvestmentSection = document.getElementById('add-investment-section');
     const investmentDateEl = document.getElementById('investment_date');
     const updateValueModalContainer = document.getElementById('update-value-modal-container');
-
-    // Retirement Calculator
     const retirementForm = document.getElementById('retirement-form');
     const retirementInitialInvestmentEl = document.getElementById('initialInvestment');
     const retirementMonthlyInvestmentEl = document.getElementById('monthlyInvestment');
@@ -366,7 +436,7 @@
         input.value = numericValue ? Number(numericValue).toLocaleString('en-US') : '';
     };
 
-    // --- MAIN APP LOGIC (ลงทุนแมน) ---
+    // --- MAIN APP LOGIC ---
     const handleLogin = async (e) => { e.preventDefault(); const email = document.getElementById('login-email').value; const password = document.getElementById('login-password').value; const { error } = await db.auth.signInWithPassword({ email, password }); if (error) alert(error.message); };
     const handleLogout = async () => { const { error } = await db.auth.signOut(); if (error) console.error("Logout Error:", error); };
     const fetchAllInvestments = async () => { try { const { data, error } = await db.from('investments').select('*').order('investment_date', { ascending: false }); if (error) throw error; allInvestments = data; renderUI(); } catch (error) { console.error('Error fetching investments:', error); } };
@@ -428,11 +498,8 @@
     // --- UI RENDERING FUNCTIONS ---
     const renderUI = () => { 
         updateDashboard(allInvestments); 
-        if (currentView === 'summary') { 
-            renderSummaryByType(allInvestments); 
-        } else if (currentView === 'analysis') { 
-            renderAnalysisView(allInvestments); 
-        } 
+        if (currentView === 'summary') { renderSummaryByType(allInvestments); } 
+        else if (currentView === 'analysis') { renderAnalysisView(allInvestments); } 
     };
     const updateDashboard = (investments) => {
         const totalInvestment = investments.reduce((acc, t) => acc + t.amount, 0);
@@ -456,72 +523,57 @@
     
     const renderSummaryByType = (investments) => {
         const summaryData = investments.reduce((acc, t) => { 
-            if (!acc[t.asset_type]) { 
-                acc[t.asset_type] = { investment: 0, currentValue: 0, items: [] }; 
-            } 
+            if (!acc[t.asset_type]) { acc[t.asset_type] = { investment: 0, currentValue: 0, items: [] }; } 
             acc[t.asset_type].investment += t.amount; 
             acc[t.asset_type].currentValue += t.current_value;
             acc[t.asset_type].items.push(t);
             return acc; 
         }, {});
         const tableEl = document.getElementById('summary-table');
-        let tableHTML = `<thead><tr style="background-color: #f8f9fa;"><th style="text-align: left;">ประเภทสินทรัพย์</th><th style="text-align: right;">เงินลงทุน</th><th style="text-align: right;">มูลค่าปัจจุบัน</th><th style="text-align: right;">กำไร/ขาดทุน</th><th style="text-align: center;">% กำไร/ขาดทุน</th><th style="text-align: center;">จัดการ</th></tr></thead><tbody>`;
-        let total = { investment: 0, currentValue: 0 };
+        let tableHTML = `<thead><tr><th>ประเภทสินทรัพย์</th><th>เงินลงทุน</th><th>มูลค่าปัจจุบัน</th><th>กำไร/ขาดทุน</th><th>% กำไร/ขาดทุน</th><th>จัดการ</th></tr></thead><tbody>`;
         
         Object.keys(summaryData).sort().forEach(type => {
             const data = summaryData[type];
             const profitLoss = data.currentValue - data.investment;
             const percent = data.investment > 0 ? (profitLoss / data.investment) * 100 : 0;
-            total.investment += data.investment; 
-            total.currentValue += data.currentValue;
-
             const typeId = type.replace(/\s/g, '-');
 
-            // Summary Row
-            tableHTML += `<tr class="summary-row" onclick="toggleDetails('${type}')" style="border-bottom: 1px solid #ddd;">
-                <td style="text-align: left; font-weight: 500;">${type}</td>
-                <td style="text-align: right;">${formatMoney(data.investment)}</td>
-                <td style="text-align: right;">${formatMoney(data.currentValue)}</td>
-                <td class="${profitLoss >= 0 ? 'positive' : 'negative'}" style="text-align: right;">${formatMoney(profitLoss)}</td>
-                <td class="${percent >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${percent.toFixed(2)}%</td>
-                <td style="text-align: center;">
+            tableHTML += `<tr class="summary-row" onclick="toggleDetails('${type}')">
+                <td data-label="ประเภท">${type}</td>
+                <td data-label="เงินลงทุน">${formatMoney(data.investment)}</td>
+                <td data-label="มูลค่าปัจจุบัน">${formatMoney(data.currentValue)}</td>
+                <td data-label="กำไร/ขาดทุน" class="${profitLoss >= 0 ? 'positive' : 'negative'}">${formatMoney(profitLoss)}</td>
+                <td data-label="% กำไร/ขาดทุน" class="${percent >= 0 ? 'positive' : 'negative'}">${percent.toFixed(2)}%</td>
+                <td data-label="จัดการ">
                     <button class="btn-small btn-secondary" onclick="event.stopPropagation(); openUpdateValueModal('${type}')">อัปเดตมูลค่ารวม</button>
                 </td>
             </tr>`;
 
-            // Details Row (initially hidden)
-            tableHTML += `<tr id="details-for-${typeId}" class="details-row hidden" style="border-bottom: 1px solid #ddd;">
-                            <td colspan="6" class="details-content">`;
-            
+            tableHTML += `<tr id="details-for-${typeId}" class="details-row hidden"><td colspan="6" class="details-content">`;
             if (data.items.length > 0) {
                  data.items.sort((a,b) => new Date(b.investment_date) - new Date(a.investment_date)).forEach(t => {
                     const itemProfitLoss = t.current_value - t.amount;
                     const itemClass = itemProfitLoss >= 0 ? 'positive' : 'negative';
                     const formattedDate = new Date(t.investment_date).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', timeZone: 'UTC' });
                     tableHTML += `<div class="investment-item">
-                        <div style="display:flex; flex-direction: column; gap: 4px;">
+                        <div style="flex-direction: column; gap: 4px; text-align: left;">
                             <span style="font-weight: 500;">${t.asset_name}</span>
                             <span style="font-size: 0.85rem; color: #666;">ลงทุน: ฿${formatMoney(t.amount)} (${formattedDate})</span>
                         </div>
-                        <div style="display:flex; align-items:center; gap: 8px;">
-                            <span class="${itemClass}" style="font-weight: 600; text-align:right; font-size: 0.9rem;">
-                                มูลค่า: ฿${formatMoney(t.current_value)}<br>
+                        <div style="align-items:center; gap: 8px; text-align: right;">
+                            <span class="${itemClass}" style="font-weight: 600; font-size: 0.9rem;">
+                                ฿${formatMoney(t.current_value)}<br>
                                 <span style="font-size: 0.8rem;">(${itemProfitLoss >= 0 ? '+' : ''}${formatMoney(itemProfitLoss)})</span>
                             </span>
                             <button class="btn-small-danger" onclick="event.stopPropagation(); removeInvestment(${t.id})">ลบ</button>
                         </div>
                     </div>`;
                 });
-            } else {
-                tableHTML += `<p>ไม่มีรายการลงทุน</p>`;
             }
-            
             tableHTML += `</td></tr>`;
         });
         
-        const totalProfitLoss = total.currentValue - total.investment;
-        const totalPercent = total.investment > 0 ? (totalProfitLoss / total.investment) * 100 : 0;
-        tableHTML += `</tbody><tfoot style="font-weight: bold; background-color: #f8f9fa;"><tr><td style="text-align: left;">รวมทั้งหมด</td><td style="text-align: right;">${formatMoney(total.investment)}</td><td style="text-align: right;">${formatMoney(total.currentValue)}</td><td class="${totalProfitLoss >= 0 ? 'positive' : 'negative'}" style="text-align: right;">${formatMoney(totalProfitLoss)}</td><td class="${totalPercent >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${totalPercent.toFixed(2)}%</td><td></td></tr></tfoot>`;
+        tableHTML += `</tbody>`;
         tableEl.innerHTML = tableHTML;
     };
     
@@ -531,7 +583,7 @@
         const sortedInvestments = [...investments].sort((a, b) => new Date(a.investment_date) - new Date(b.investment_date));
         const firstYear = new Date(sortedInvestments[0].investment_date).getFullYear();
         const lastYear = new Date().getFullYear();
-        let yearlyData = {}; let lastYearPortfolioValue = 0; let lastYearTotalInvestment = 0;
+        let yearlyData = {}; let lastYearPortfolioValue = 0;
         for (let year = firstYear; year <= lastYear; year++) {
             const investmentsInYear = sortedInvestments.filter(t => new Date(t.investment_date).getFullYear() === year);
             const investmentsUpToYear = sortedInvestments.filter(t => new Date(t.investment_date).getFullYear() <= year);
@@ -545,10 +597,18 @@
             yearlyData[year] = { newInvestment, totalInvestment, portfolioValue, totalGainLoss, annualGainLoss, annualReturnPercent };
             lastYearPortfolioValue = portfolioValue;
         }
-        let tableHTML = `<thead><tr style="background-color: #f8f9fa;"><th>ปี</th><th style="text-align: right;">เงินลงทุนใหม่</th><th style="text-align: right;">เงินลงทุนสะสม</th><th style="text-align: right;">มูลค่าพอร์ตสิ้นปี</th><th style="text-align: right;">กำไร/ขาดทุนสะสม</th><th style="text-align: right;">กำไร/ขาดทุนปีนี้</th><th style="text-align: center;">% ผลตอบแทนปีนี้</th></tr></thead><tbody>`;
+        let tableHTML = `<thead><tr><th>ปี</th><th>เงินลงทุนใหม่</th><th>เงินลงทุนสะสม</th><th>มูลค่าพอร์ตสิ้นปี</th><th>กำไร/ขาดทุนสะสม</th><th>กำไร/ขาดทุนปีนี้</th><th>% ผลตอบแทนปีนี้</th></tr></thead><tbody>`;
         Object.keys(yearlyData).sort((a,b) => b-a).forEach(year => {
             const data = yearlyData[year];
-            tableHTML += `<tr style="border-bottom: 1px solid #ddd;"><td style="text-align: center; font-weight: 500;">${parseInt(year) + 543}</td><td style="text-align: right;">${formatMoney(data.newInvestment)}</td><td style="text-align: right;">${formatMoney(data.totalInvestment)}</td><td style="text-align: right;">${formatMoney(data.portfolioValue)}</td><td class="${data.totalGainLoss >= 0 ? 'positive' : 'negative'}" style="text-align: right;">${formatMoney(data.totalGainLoss)}</td><td class="${data.annualGainLoss >= 0 ? 'positive' : 'negative'}" style="text-align: right;">${formatMoney(data.annualGainLoss)}</td><td class="${data.annualReturnPercent >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${data.annualReturnPercent.toFixed(2)}%</td></tr>`;
+            tableHTML += `<tr>
+                <td data-label="ปี" style="font-weight: 500;">${parseInt(year) + 543}</td>
+                <td data-label="เงินลงทุนใหม่">${formatMoney(data.newInvestment)}</td>
+                <td data-label="เงินลงทุนสะสม">${formatMoney(data.totalInvestment)}</td>
+                <td data-label="มูลค่าพอร์ตสิ้นปี">${formatMoney(data.portfolioValue)}</td>
+                <td data-label="กำไร/ขาดทุนสะสม" class="${data.totalGainLoss >= 0 ? 'positive' : 'negative'}">${formatMoney(data.totalGainLoss)}</td>
+                <td data-label="กำไร/ขาดทุนปีนี้" class="${data.annualGainLoss >= 0 ? 'positive' : 'negative'}">${formatMoney(data.annualGainLoss)}</td>
+                <td data-label="% ผลตอบแทนปีนี้" class="${data.annualReturnPercent >= 0 ? 'positive' : 'negative'}">${data.annualReturnPercent.toFixed(2)}%</td>
+            </tr>`;
         });
         tableHTML += `</tbody>`; tableEl.innerHTML = tableHTML;
     };
@@ -567,7 +627,7 @@
         let currentAge = today.getFullYear() - birthDate.getFullYear();
         const m = today.getMonth() - birthDate.getMonth();
         if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) { currentAge--; }
-        if (retirementAge <= currentAge) { retirementErrorMessage.textContent = 'อายุที่ต้องการเกษียณต้องมากกว่าอายุ-ปัจจุบัน'; return; }
+        if (retirementAge <= currentAge) { retirementErrorMessage.textContent = 'อายุที่ต้องการเกษียณต้องมากกว่าอายุุุ-ปัจจุบัน'; return; }
         const yearsToInvest = retirementAge - currentAge;
         const yearsInRetirement = lifeExpectancy - retirementAge;
         const monthlyReturn = annualReturn / 100 / 12;
@@ -627,17 +687,14 @@
             authContainer.classList.remove('hidden'); appContainer.classList.add('hidden');
         }
         loadRetirementDataFromLocalStorage();
-        setView('summary'); // Set initial view to summary
+        setView('summary');
     };
     db.auth.onAuthStateChange((event, session) => { if (event === 'SIGNED_IN') { initializeApp(); } else if (event === 'SIGNED_OUT') { authContainer.classList.remove('hidden'); appContainer.classList.add('hidden'); allInvestments = []; userEmailDisplay.textContent = ''; document.getElementById('login-form').reset(); } });
     
-    // Main App Listeners
     document.getElementById('login-form').addEventListener('submit', handleLogin);
     document.getElementById('logout-btn').addEventListener('click', handleLogout);
     document.getElementById('investment-form').addEventListener('submit', addInvestment);
     document.getElementById('update-value-form').addEventListener('submit', handleBulkUpdateValue);
-   
-    // Retirement Calculator Listeners
     retirementForm.addEventListener('submit', calculateRetirement);
     retirementResetButton.addEventListener('click', resetAllData);
     retirementInitialInvestmentEl.addEventListener('input', onInputNumberFormat);
