@@ -140,6 +140,7 @@
         .btn-small { padding: 6px 12px; font-size: 0.8rem; width: auto; display: inline-block; }
         .btn-small-danger { padding: 4px 8px; font-size: 0.8rem; width: auto; display: inline-block; background-color: var(--danger-color); color: white;}
         .btn-small-danger:hover { background-color: var(--danger-hover-color); }
+        .btn-mobile-only { display: none; }
         
         /* Summary Accordion Styles */
         #summary-table .summary-row { cursor: pointer; transition: background-color 0.2s ease; }
@@ -187,65 +188,43 @@
             header h1 { font-size: 2rem; }
             .card .amount { font-size: 1.5rem; }
 
-            .view-toggle {
-                grid-template-columns: 1fr;
-                gap: 2px;
-                border: none;
-                border-radius: 8px;
-            }
-            .view-toggle-btn { border-radius: 8px !important; }
-
             /* Table to Card Transformation */
-            table thead {
-                display: none;
-            }
+            table thead { display: none; }
             table tr {
-                display: block;
-                margin-bottom: 1rem;
-                border-radius: 8px;
-                border: 1px solid var(--border-color);
-                box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+                display: block; margin-bottom: 1rem; border-radius: 8px;
+                border: 1px solid var(--border-color); box-shadow: 0 2px 4px rgba(0,0,0,0.05);
                 overflow: hidden;
             }
             table td {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding: 10px 15px;
-                text-align: right !important;
-                border-bottom: 1px solid #f0f0f0;
+                display: flex; justify-content: space-between; align-items: center;
+                padding: 10px 15px; text-align: right !important; border-bottom: 1px solid #f0f0f0;
                 white-space: normal;
             }
-             table td:last-child {
-                border-bottom: none;
-            }
+             table td:last-child { border-bottom: none; }
             table td::before {
-                content: attr(data-label);
-                font-weight: 500;
-                color: #333;
-                text-align: left;
-                margin-right: 15px;
+                content: attr(data-label); font-weight: 500; color: #333;
+                text-align: left; margin-right: 15px;
             }
             
-            #summary-table tr.summary-row { background-color: #f8f9fa; }
+            .desktop-only-cell { display: none; }
             #summary-table td:first-child { 
-                background-color: var(--primary-color); 
-                color: white; 
-                font-weight: bold;
-                font-size: 1.1rem;
-                padding-top: 12px;
-                padding-bottom: 12px;
+                background-color: var(--primary-color); color: white; font-weight: bold;
+                font-size: 1.1rem; padding: 12px 15px;
+                display: flex; justify-content: space-between; align-items: center;
             }
-             #summary-table td:first-child::before { display: none; } /* Hide label for the main title */
-            #summary-table td:last-child, #yearly-summary-table td:last-child {
-                justify-content: center;
+            #summary-table td:first-child .btn-mobile-only {
+                display: inline-block;
+                background-color: var(--secondary-color);
+                color: white;
+                padding: 4px 10px;
+                font-size: 0.8rem;
+                font-weight: 500;
             }
-             #summary-table .details-row {
-                margin-top: -1rem; /* Pull details closer to parent */
-                margin-bottom: 1rem;
-                border-top: none;
-                border-top-left-radius: 0;
-                border-top-right-radius: 0;
+            #summary-table td:first-child::before { display: none; }
+            #yearly-summary-table td:last-child { justify-content: center; }
+            #summary-table .details-row {
+                margin-top: -1rem; margin-bottom: 1rem; border-top: none;
+                border-top-left-radius: 0; border-top-right-radius: 0;
             }
         }
     </style>
@@ -539,12 +518,12 @@
             const typeId = type.replace(/\s/g, '-');
 
             tableHTML += `<tr class="summary-row" onclick="toggleDetails('${type}')">
-                <td data-label="ประเภท">${type}</td>
+                <td data-label="ประเภท">${type} <button class="btn-small btn-mobile-only" onclick="event.stopPropagation(); openUpdateValueModal('${type}')">อัปเดต</button></td>
                 <td data-label="เงินลงทุน">${formatMoney(data.investment)}</td>
                 <td data-label="มูลค่าปัจจุบัน">${formatMoney(data.currentValue)}</td>
                 <td data-label="กำไร/ขาดทุน" class="${profitLoss >= 0 ? 'positive' : 'negative'}">${formatMoney(profitLoss)}</td>
                 <td data-label="% กำไร/ขาดทุน" class="${percent >= 0 ? 'positive' : 'negative'}">${percent.toFixed(2)}%</td>
-                <td data-label="จัดการ">
+                <td data-label="จัดการ" class="desktop-only-cell">
                     <button class="btn-small btn-secondary" onclick="event.stopPropagation(); openUpdateValueModal('${type}')">อัปเดตมูลค่ารวม</button>
                 </td>
             </tr>`;
