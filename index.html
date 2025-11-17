@@ -136,9 +136,10 @@
             max-width: 100%;
             overflow-x: auto;
         }
-        .section.table-section { /* New style to center the table container */
+        .section.table-section { /* Corrected style */
             display: flex;
-            justify-content: center;
+            flex-direction: column;
+            align-items: center;
         }
 
         table { font-size: 0.9rem; width: 100%; border-collapse: collapse; }
@@ -426,6 +427,15 @@
 
     // --- HELPER FUNCTIONS ---
     const formatMoney = (number) => Number(number).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const formatAbbreviatedMoney = (number) => {
+        if (Math.abs(number) < 1.0e+6) {
+            return formatMoney(number);
+        }
+        const suffixes = ["", "K", "M", "B", "T"];
+        const suffixNum = Math.floor(Math.log10(Math.abs(number)) / 3);
+        let shortValue = (number / Math.pow(1000, suffixNum)).toFixed(2);
+        return shortValue + suffixes[suffixNum];
+    };
     const formatNumberInput = (value) => value ? parseFloat(String(value).replace(/,/g, '')).toLocaleString('en-US') : '';
     const unformatNumberInput = (value) => value.replace(/,/g, '');
     const onInputNumberFormat = (event) => {
@@ -505,11 +515,11 @@
         const currentValue = investments.reduce((acc, t) => acc + t.current_value, 0);
         const profitLoss = currentValue - totalInvestment;
         const profitLossPercent = totalInvestment > 0 ? (profitLoss / totalInvestment) * 100 : 0;
-        document.getElementById('total-investment').innerHTML = `฿${formatMoney(totalInvestment)}`;
-        document.getElementById('current-value').innerHTML = `฿${formatMoney(currentValue)}`;
+        document.getElementById('total-investment').innerHTML = `฿${formatAbbreviatedMoney(totalInvestment)}`;
+        document.getElementById('current-value').innerHTML = `฿${formatAbbreviatedMoney(currentValue)}`;
         const profitLossEl = document.getElementById('profit-loss');
         const plClass = profitLoss >= 0 ? 'positive' : 'negative';
-        profitLossEl.innerHTML = `฿${formatMoney(profitLoss)} <span class="sub-amount ${plClass}">(${profitLossPercent.toFixed(2)}%)</span>`;
+        profitLossEl.innerHTML = `฿${formatAbbreviatedMoney(profitLoss)} <span class="sub-amount ${plClass}">(${profitLossPercent.toFixed(2)}%)</span>`;
         profitLossEl.className = `amount ${plClass}`;
     };
     
@@ -539,9 +549,9 @@
 
             tableHTML += `<tr class="summary-row" onclick="toggleDetails('${type}')">
                 <td data-label="ประเภท">${type} <button class="btn-small btn-mobile-only" onclick="event.stopPropagation(); openUpdateValueModal('${type}')">อัปเดต</button></td>
-                <td data-label="เงินลงทุน">${formatMoney(data.investment)}</td>
-                <td data-label="มูลค่าปัจจุบัน">${formatMoney(data.currentValue)}</td>
-                <td data-label="กำไร/ขาดทุน" class="${profitLoss >= 0 ? 'positive' : 'negative'}">${formatMoney(profitLoss)}</td>
+                <td data-label="เงินลงทุน">${formatAbbreviatedMoney(data.investment)}</td>
+                <td data-label="มูลค่าปัจจุบัน">${formatAbbreviatedMoney(data.currentValue)}</td>
+                <td data-label="กำไร/ขาดทุน" class="${profitLoss >= 0 ? 'positive' : 'negative'}">${formatAbbreviatedMoney(profitLoss)}</td>
                 <td data-label="% กำไร/ขาดทุน" class="${percent >= 0 ? 'positive' : 'negative'}">${percent.toFixed(2)}%</td>
                 <td data-label="จัดการ" class="desktop-only-cell">
                     <button class="btn-small btn-secondary" onclick="event.stopPropagation(); openUpdateValueModal('${type}')">อัปเดตมูลค่ารวม</button>
@@ -601,11 +611,11 @@
             const data = yearlyData[year];
             tableHTML += `<tr>
                 <td data-label="ปี" style="font-weight: 500;">${parseInt(year) + 543}</td>
-                <td data-label="เงินลงทุนใหม่">${formatMoney(data.newInvestment)}</td>
-                <td data-label="เงินลงทุนสะสม">${formatMoney(data.totalInvestment)}</td>
-                <td data-label="มูลค่าพอร์ตสิ้นปี">${formatMoney(data.portfolioValue)}</td>
-                <td data-label="กำไร/ขาดทุนสะสม" class="${data.totalGainLoss >= 0 ? 'positive' : 'negative'}">${formatMoney(data.totalGainLoss)}</td>
-                <td data-label="กำไร/ขาดทุนปีนี้" class="${data.annualGainLoss >= 0 ? 'positive' : 'negative'}">${formatMoney(data.annualGainLoss)}</td>
+                <td data-label="เงินลงทุนใหม่">${formatAbbreviatedMoney(data.newInvestment)}</td>
+                <td data-label="เงินลงทุนสะสม">${formatAbbreviatedMoney(data.totalInvestment)}</td>
+                <td data-label="มูลค่าพอร์ตสิ้นปี">${formatAbbreviatedMoney(data.portfolioValue)}</td>
+                <td data-label="กำไร/ขาดทุนสะสม" class="${data.totalGainLoss >= 0 ? 'positive' : 'negative'}">${formatAbbreviatedMoney(data.totalGainLoss)}</td>
+                <td data-label="กำไร/ขาดทุนปีนี้" class="${data.annualGainLoss >= 0 ? 'positive' : 'negative'}">${formatAbbreviatedMoney(data.annualGainLoss)}</td>
                 <td data-label="% ผลตอบแทนปีนี้" class="${data.annualReturnPercent >= 0 ? 'positive' : 'negative'}">${data.annualReturnPercent.toFixed(2)}%</td>
             </tr>`;
         });
