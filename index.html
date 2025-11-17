@@ -125,13 +125,14 @@
         }
         .view-toggle-btn { 
             padding: 12px; background: var(--card-bg-color); border: none; cursor: pointer; 
-            font-family: 'Kanit'; font-size: 1rem; color: var(--primary-color);
+            font-family: 'Kanit', sans-serif; font-size: 1rem; color: var(--primary-color);
             font-weight: 500; transition: all 0.2s ease;
             border-radius: 0; box-shadow: none;
         }
         .view-toggle-btn.active { background-color: var(--primary-color); color: white; font-weight: 600; }
         
         table { font-size: 0.9rem; width: 100%; border-collapse: collapse; }
+        #summary-view table, #analysis-view table { margin: 0 auto; } /* Center tables */
         th, td { white-space: nowrap; padding: 12px 10px; text-align: right;}
         th:first-child, td:first-child { text-align: left;}
         th { text-align: center; }
@@ -161,16 +162,15 @@
         .modal-content .button-group button { flex: 1; }
         
         /* Retirement Calculator Specific Styles */
-        #retirement-view .section { font-family: 'Sarabun', sans-serif; }
         #retirement-view h1 { text-align: center; color: var(--primary-color); margin-bottom: 25px; }
         #retirement-view label { display: block; margin-bottom: 8px; font-weight: bold; color: #4b5563; }
         #retirement-view input {
             width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px;
-            box-sizing: border-box; font-size: 1rem; font-family: 'Sarabun', sans-serif;
+            box-sizing: border-box; font-size: 1rem;
         }
         #retirement-view .format-number { text-align: right; }
         #retirement-view .button-group { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 25px; }
-        #retirement-view button { font-family: 'Sarabun', sans-serif; font-size: 1.1rem; }
+        #retirement-view button { font-size: 1.1rem; }
         #retirement-view .results {
             margin-top: 30px; padding: 20px; background-color: #eef2ff;
             border: 2px solid #c7d2fe; border-radius: 8px;
@@ -188,7 +188,6 @@
             header h1 { font-size: 2rem; }
             
             .dashboard {
-                grid-template-columns: 1fr; /* Change to 1 column for stacking */
                 gap: 10px;
             }
             .card { padding: 15px; }
