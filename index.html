@@ -164,6 +164,11 @@
             align-items: center;
             gap: 8px;
         }
+        /* NEW: Wrapper for the right-side buttons in investment-item-actions */
+        .investment-item-buttons {
+            display: flex;
+            gap: 8px;
+        }
 
 
         .modal-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 100; display: flex; justify-content: center; align-items: center; padding: 15px; overflow-y: auto; }
@@ -197,7 +202,6 @@
             border-radius: 5px;
             border: 1px solid var(--border-color);
             min-width: 150px;
-            /* MODIFIED: Added font styles for consistency */
             font-family: 'Kanit', sans-serif;
             font-size: 1rem;
         }
@@ -240,8 +244,29 @@
             .card .amount { font-size: 1.0rem; }
             .card .sub-amount { font-size: 0.7rem; }
             
-            .filter-container { flex-direction: column; }
-            .filter-group select { min-width: 250px; }
+            /* MODIFIED: Filter styles for mobile */
+            .filter-container {
+                flex-direction: row;
+                gap: 10px;
+            }
+            .filter-group {
+                flex: 1;
+            }
+            .filter-group select {
+                width: 100%;
+                min-width: 0;
+            }
+
+            /* NEW: Investment Item styles for mobile */
+            #summary-table .investment-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            .investment-item-actions {
+                width: 100%;
+                justify-content: space-between;
+            }
 
             /* Table to Card Transformation */
             table thead { display: none; }
@@ -733,8 +758,9 @@
                     const itemProfitLoss = t.current_value - t.amount;
                     const itemClass = itemProfitLoss >= 0 ? 'positive' : 'negative';
                     const formattedDate = new Date(t.investment_date).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit', timeZone: 'UTC' });
+                    // MODIFIED: Added a wrapper div around buttons for easier mobile layout
                     tableHTML += `<div class="investment-item">
-                        <div style="flex-direction: column; gap: 4px; text-align: left;">
+                        <div style="flex-direction: column; gap: 4px; text-align: left; word-break: break-all;">
                             <span style="font-weight: 500;">${t.asset_name}</span>
                             <span style="font-size: 0.85rem; color: #666;">ลงทุน: ฿${formatMoney(t.amount)} (${formattedDate})</span>
                         </div>
@@ -743,8 +769,10 @@
                                 ฿${formatMoney(t.current_value)}
                                 <span style="font-size: 0.8rem; font-weight: 500;">(${itemProfitLoss >= 0 ? '+' : ''}${formatMoney(itemProfitLoss)})</span>
                             </span>
-                            <button class="btn-small-secondary" onclick="event.stopPropagation(); openEditModal(${t.id})">แก้ไข</button>
-                            <button class="btn-small-danger" onclick="event.stopPropagation(); removeInvestment(${t.id})">ลบ</button>
+                            <div class="investment-item-buttons">
+                                <button class="btn-small-secondary" onclick="event.stopPropagation(); openEditModal(${t.id})">แก้ไข</button>
+                                <button class="btn-small-danger" onclick="event.stopPropagation(); removeInvestment(${t.id})">ลบ</button>
+                            </div>
                         </div>
                     </div>`;
                 });
