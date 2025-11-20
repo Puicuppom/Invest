@@ -283,9 +283,10 @@
                 text-align: left; margin-right: 15px;
             }
 
-            /* MODIFIED/FIX: Override generic td style for the details cell */
+            /* MODIFIED/FIX: This is the crucial fix. It forces the container of investment items to stack them vertically. */
             #summary-table .details-content {
-                display: block;
+                flex-direction: column;
+                align-items: stretch; 
             }
             
             .desktop-only-cell { display: none; }
