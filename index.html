@@ -486,7 +486,6 @@
             </form>
         </div>
     </div>
-
     <script>
     const SUPABASE_URL = "https://fmbympgecspgqtnazrbm.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZtYnltcGdlY3NwZ3F0bmF6cmJtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA3NDkwOTksImV4cCI6MjA2NjMyNTA5OX0.rqOrNDNRTF7WnDS6utTTKfFoNZKPiMZV_ttqYzYCaJs";
@@ -495,7 +494,28 @@
 
     // --- GLOBAL VARIABLES ---
     let allInvestments = [];
+    let yearlySnapshots = [];
     let currentView = 'summary';
+window.saveSnapshot = async (year, totalInvest) => {
+        const value = prompt(`ระบุมูลค่าพอร์ตสุทธิ ณ สิ้นปี พ.ศ. ${year + 543}:`);
+        if (value === null || isNaN(parseFloat(value))) return;
+
+        try {
+            const { data: { user } } = await db.auth.getUser();
+            const { error } = await db.from('yearly_snapshots').upsert({
+                user_id: user.id,
+                year: year,
+                portfolio_value: parseFloat(value),
+                total_investment: totalInvest
+            });
+
+            if (error) throw error;
+            alert('บันทึกข้อมูลเรียบร้อยแล้ว');
+            await fetchAllInvestments(); 
+        } catch (error) {
+            alert('เกิดข้อผิดพลาด: ' + error.message);
+        }
+    };
 
     // --- DOM ELEMENT SELECTORS ---
     const authContainer = document.getElementById('auth-container');
@@ -552,7 +572,21 @@
     // --- MAIN APP LOGIC ---
     const handleLogin = async (e) => { e.preventDefault(); const email = document.getElementById('login-email').value; const password = document.getElementById('login-password').value; const { error } = await db.auth.signInWithPassword({ email, password }); if (error) alert(error.message); };
     const handleLogout = async () => { const { error } = await db.auth.signOut(); if (error) console.error("Logout Error:", error); };
-    const fetchAllInvestments = async () => { try { const { data, error } = await db.from('investments').select('*').order('investment_date', { ascending: false }); if (error) throw error; allInvestments = data; populateAssetNameDatalist(allInvestments); renderUI(); } catch (error) { console.error('Error fetching investments:', error); } };
+    const fetchAllInvestments = async () => { 
+    try { 
+        const { data: { user } } = await db.auth.getUser(); // ต้องดึง user มาก่อน
+        const { data, error } = await db.from('investments').select('*').order('investment_date', { ascending: false }); 
+        if (error) throw error; 
+        allInvestments = data; 
+
+        // เพิ่มการดึงข้อมูลจากตาราง Snapshot
+        const { data: snaps, error: err2 } = await db.from('yearly_snapshots').select('*').eq('user_id', user.id);
+        if (!err2) yearlySnapshots = snaps;
+
+        populateAssetNameDatalist(allInvestments); 
+        renderUI(); 
+    } catch (error) { console.error('Error:', error); } 
+};
     const addInvestment = async (e) => { e.preventDefault(); try { const { data: { user } } = await db.auth.getUser(); const amount = +document.getElementById('amount').value; const newInvestment = { user_id: user.id, asset_type: document.getElementById('asset_type').value, asset_name: document.getElementById('asset_name').value, amount, current_value: amount, investment_date: investmentDateEl.value }; const { error } = await db.from('investments').insert(newInvestment); if (error) throw error; await fetchAllInvestments(); document.getElementById('investment-form').reset(); investmentDateEl.valueAsDate = new Date(); } catch (error) { console.error('Error adding investment:', error); alert('เกิดข้อผิดพลาด: ' + error.message); } };
     const removeInvestment = async (id) => { if (!confirm('คุณแน่ใจว่าต้องการลบรายการนี้?')) return; try { const { error } = await db.from('investments').delete().eq('id', id); if (error) throw error; await fetchAllInvestments(); } catch (error) { console.error('Error deleting investment:', error); alert('เกิดข้อผิดพลาด: ' + error.message); } };
     
@@ -656,27 +690,25 @@
     };
     
     const setupFilters = () => {
-        const today = new Date();
-        const currentYear = today.getFullYear();
-        const currentMonth = today.getMonth() + 1;
+    const today = new Date();
+    const currentYear = today.getFullYear();
 
-        filterMonthEl.innerHTML = '<option value="all">ทุกเดือน</option>';
-        const months = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
-        months.forEach((month, index) => {
-            const monthValue = index + 1;
-            filterMonthEl.innerHTML += `<option value="${monthValue}" ${monthValue === currentMonth ? 'selected' : ''}>${month}</option>`;
-        });
+    filterMonthEl.innerHTML = '<option value="all" selected>ทุกเดือน</option>'; // เพิ่ม selected
+    const months = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
+    months.forEach((month, index) => {
+        filterMonthEl.innerHTML += `<option value="${index + 1}">${month}</option>`; // ลบเงื่อนไข selected เดือนปัจจุบัน
+    });
 
-        const yearsWithData = [...new Set(allInvestments.map(inv => new Date(inv.investment_date).getFullYear()))];
-        const years = yearsWithData.length > 0 ? yearsWithData : [currentYear];
-        const minYear = Math.min(...years);
-        const maxYear = Math.max(currentYear, ...years);
-        filterYearEl.innerHTML = '<option value="all">ทุกปี</option>';
-        for (let year = maxYear; year >= minYear; year--) {
-            const thaiYear = year + 543;
-            filterYearEl.innerHTML += `<option value="${year}" ${year === currentYear ? 'selected' : ''}>${thaiYear}</option>`;
-        }
-    };
+    const yearsWithData = [...new Set(allInvestments.map(inv => new Date(inv.investment_date).getFullYear()))];
+    const years = yearsWithData.length > 0 ? yearsWithData : [currentYear];
+    const minYear = Math.min(...years);
+    const maxYear = Math.max(currentYear, ...years);
+
+    filterYearEl.innerHTML = '<option value="all" selected>ทุกปี</option>'; // เพิ่ม selected
+    for (let year = maxYear; year >= minYear; year--) {
+        filterYearEl.innerHTML += `<option value="${year}">${year + 543}</option>`; // ลบเงื่อนไข selected ปีปัจจุบัน
+    }
+};
 
     // --- UI RENDERING FUNCTIONS ---
     const renderUI = () => {
@@ -788,38 +820,70 @@
     
     const renderAnalysisView = (investments) => {
         const tableEl = document.getElementById('yearly-summary-table');
-        if (investments.length === 0) { tableEl.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 20px;">ยังไม่มีข้อมูลการลงทุน</td></tr>'; return; }
+        if (investments.length === 0) { tableEl.innerHTML = '<tr><td colspan="8" style="text-align:center; padding: 20px;">ยังไม่มีข้อมูลการลงทุน</td></tr>'; return; }
+        
         const sortedInvestments = [...investments].sort((a, b) => new Date(a.investment_date) - new Date(b.investment_date));
         const firstYear = new Date(sortedInvestments[0].investment_date).getFullYear();
         const lastYear = new Date().getFullYear();
-        let yearlyData = {}; let lastYearPortfolioValue = 0;
+        
+        let yearlyData = {}; 
+        let lastYearPortfolioValue = 0;
+
         for (let year = firstYear; year <= lastYear; year++) {
             const investmentsInYear = sortedInvestments.filter(t => new Date(t.investment_date).getFullYear() === year);
             const investmentsUpToYear = sortedInvestments.filter(t => new Date(t.investment_date).getFullYear() <= year);
+            
             const newInvestment = investmentsInYear.reduce((sum, t) => sum + t.amount, 0);
-            const portfolioValue = investmentsUpToYear.reduce((sum, t) => sum + t.current_value, 0);
             const totalInvestment = investmentsUpToYear.reduce((sum, t) => sum + t.amount, 0);
+
+            // --- จุดที่แก้ไข: เช็ค Snapshot ก่อน ---
+            const snapshot = yearlySnapshots.find(s => s.year === year);
+            let portfolioValue;
+            let isLocked = false;
+
+            if (snapshot) {
+                portfolioValue = snapshot.portfolio_value;
+                isLocked = true;
+            } else {
+                portfolioValue = investmentsUpToYear.reduce((sum, t) => sum + t.current_value, 0);
+            }
+            // -----------------------------------
+
             const totalGainLoss = portfolioValue - totalInvestment;
             const annualGainLoss = (portfolioValue - lastYearPortfolioValue) - newInvestment;
             const beginningOfYearValue = lastYearPortfolioValue + newInvestment;
             const annualReturnPercent = beginningOfYearValue > 0 ? (annualGainLoss / beginningOfYearValue) * 100 : 0;
-            yearlyData[year] = { newInvestment, totalInvestment, portfolioValue, totalGainLoss, annualGainLoss, annualReturnPercent };
+            
+            yearlyData[year] = { 
+                newInvestment, totalInvestment, portfolioValue, totalGainLoss, 
+                annualGainLoss, annualReturnPercent, isLocked 
+            };
             lastYearPortfolioValue = portfolioValue;
         }
-        let tableHTML = `<thead><tr><th>ปี</th><th>เงินลงทุนใหม่</th><th>เงินลงทุนสะสม</th><th>มูลค่าพอร์ตสิ้นปี</th><th>กำไร/ขาดทุนสะสม</th><th>กำไร/ขาดทุนปีนี้</th><th>% ผลตอบแทนปีนี้</th></tr></thead><tbody>`;
+
+        let tableHTML = `<thead><tr><th>ปี</th><th>เงินลงทุนใหม่</th><th>เงินลงทุนสะสม</th><th>มูลค่าพอร์ตสิ้นปี</th><th>กำไร/ขาดทุนสะสม</th><th>กำไร/ขาดทุนปีนี้</th><th>% ผลตอบแทน</th><th>จัดการ</th></tr></thead><tbody>`;
+        
         Object.keys(yearlyData).sort((a,b) => b-a).forEach(year => {
             const data = yearlyData[year];
             tableHTML += `<tr>
                 <td data-label="ปี" style="font-weight: 500;">${parseInt(year) + 543}</td>
                 <td data-label="เงินลงทุนใหม่">${formatAbbreviatedMoney(data.newInvestment)}</td>
                 <td data-label="เงินลงทุนสะสม">${formatAbbreviatedMoney(data.totalInvestment)}</td>
-                <td data-label="มูลค่าพอร์ตสิ้นปี">${formatAbbreviatedMoney(data.portfolioValue)}</td>
+                <td data-label="มูลค่าพอร์ตสิ้นปี" style="${data.isLocked ? 'font-weight:bold; color:var(--primary-color);' : ''}">
+                    ${formatAbbreviatedMoney(data.portfolioValue)} ${data.isLocked ? '🔒' : ''}
+                </td>
                 <td data-label="กำไร/ขาดทุนสะสม" class="${data.totalGainLoss >= 0 ? 'positive' : 'negative'}">${formatAbbreviatedMoney(data.totalGainLoss)}</td>
                 <td data-label="กำไร/ขาดทุนปีนี้" class="${data.annualGainLoss >= 0 ? 'positive' : 'negative'}">${formatAbbreviatedMoney(data.annualGainLoss)}</td>
-                <td data-label="% ผลตอบแทนปีนี้" class="${data.annualReturnPercent >= 0 ? 'positive' : 'negative'}">${data.annualReturnPercent.toFixed(2)}%</td>
+                <td data-label="% ผลตอบแทน" class="${data.annualReturnPercent >= 0 ? 'positive' : 'negative'}">${data.annualReturnPercent.toFixed(2)}%</td>
+                <td data-label="จัดการ">
+                    <button class="btn-small btn-secondary" onclick="saveSnapshot(${year}, ${data.totalInvestment})">
+                        ${data.isLocked ? 'แก้ไขค่า' : 'บันทึกค่าสิ้นปี'}
+                    </button>
+                </td>
             </tr>`;
         });
-        tableHTML += `</tbody>`; tableEl.innerHTML = tableHTML;
+        tableHTML += `</tbody>`; 
+        tableEl.innerHTML = tableHTML;
     };
     
     // --- RETIREMENT CALCULATOR LOGIC ---
